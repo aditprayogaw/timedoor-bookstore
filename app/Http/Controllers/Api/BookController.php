@@ -17,10 +17,7 @@ class BookController extends Controller
         $query = Book::query()
             ->select('books.*')
             ->selectRaw('COUNT(r.id) AS total_voters')
-
-            // Hitung Weighted Average Rating: (V * R + C * M) / (V + C)
-            // Di mana V=Total Voters, R=Avg Rating, C=Konstanta (mis. 50), M=Avg Rating Minimum (mis. 6)
-            // Kita gunakan formula sederhana: (AVG * (Voters + 1)) / (Voters + 1) untuk prioritaskan buku dengan banyak rating
+            ->selectRaw('AVG(r.rating_score) AS current_avg_rating')
             ->selectRaw('((AVG(r.rating_score) * COUNT(r.id)) / (COUNT(r.id) + 1)) AS weighted_average_rating')
             
             // Hitung Recent Popularity (Voters dalam 30 hari terakhir)
