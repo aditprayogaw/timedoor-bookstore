@@ -69,9 +69,9 @@ class WebController extends Controller
     // C.4.3 Input rating (Menampilkan Form)
     public function inputRatingForm()
     {
-        $books = Book::select('id', 'title', 'author_id')->with('author')->get();
+        $authors = Author::select('id', 'name')->orderBy('name')->get();
         
-        $ratings = range(1, 5);
-        return view('input_rating', compact('books', 'ratings'));
+        $ratings = range(1, 10);
+        return view('input_rating', compact('authors', 'ratings'));
     }
 }

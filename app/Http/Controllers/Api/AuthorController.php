@@ -94,7 +94,7 @@ class AuthorController extends Controller
             ];
         });
 
-        // Ranking dan Batasan Top 20
+        // Ranking dan Batasan Top 10
         $rankings = [
             'by_popularity' => $rankedAuthors->sortByDesc('popularity_voters_count')->take(20)->values()->all(),
             'by_avg_rating' => $rankedAuthors->sortByDesc('overall_avg_rating')->take(20)->values()->all(),

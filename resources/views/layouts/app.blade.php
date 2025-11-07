@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ route('web.books.list') }}">📚 DoeStore</a>
             <div class="collapse navbar-collapse" id="navbarNav">

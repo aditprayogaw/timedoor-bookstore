@@ -8,13 +8,23 @@ use App\Models\Rating;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class RatingController extends Controller
 {
     private function getVoterIdentifier(Request $request): string
     {
-        // Untuk simulasi: Gunakan header kustom atau IP Address
-        return $request->header('X-Voter-ID', $request->ip());
+        // Ambil IP address atau header kustom.
+        $voterId = $request->header('X-Voter-ID', $request->ip());
+        
+        // Jika IP atau header kosong/null (misalnya di CLI), gunakan string default yang kuat
+        if (empty($voterId)) {
+            // Gunakan nilai yang jelas (misalnya: 'TEST_CLI_USER')
+            return 'TEST_VOTER_FALLBACK_' . \Str::random(10); 
+        }
+        
+        // Pastikan nilai dikembalikan sebagai string
+        return (string) $voterId;
     }
 
     public function store(Request $request)
@@ -41,8 +51,8 @@ class RatingController extends Controller
         // --- 2. Penanganan Concurrent Submissions & Batasan 24 Jam ---
         try {
             DB::beginTransaction();
-
-            // Cek batasan 24 jam (users must wait 24 hours between ratings - any book)
+            
+            // Batasi 1 Rating per 24 Jam
             $lastRating = Rating::where('voter_identifier', $voterId)
                 ->orderByDesc('created_at')
                 ->first();
@@ -61,8 +71,6 @@ class RatingController extends Controller
                 ->first();
 
             if ($existingRating) {
-                // Jika rating duplikat, kita bisa mengupdate rating yang ada (lebih fleksibel) 
-                // atau menolaknya (sesuai aturan, biasanya ditolak jika tidak ada instruksi update).
                 DB::rollBack();
                 return response()->json([
                     'message' => 'Anda sudah memberikan rating untuk buku ini.',
@@ -80,20 +88,21 @@ class RatingController extends Controller
             DB::commit();
 
             // --- 4. Success Response ---
-            // Setelah submit success, go back to first page (List of book)
-            // Dalam konteks API, kita arahkan ke endpoint list books
             return response()->json([
-                'message' => 'Rating berhasil disimpan!',
+                'message' => 'Rating successfully saved!',
                 'new_rating_score' => $rating->rating_score,
-                'redirect_url' => route('books.index'), // Asumsi Anda menamai rute books.index
+                'redirect_url' => route('web.books.list'), 
             ], 201); // 201: Created
 
         } catch (\Exception $e) {
             DB::rollBack();
+            // Log exception ke file log Laravel
+            \Log::error('Rating Submission Fatal Error: ' . $e->getMessage() . ' | Data: ' . json_encode($request->all()));
             // Show meaningful error messages
             return response()->json([
-                'message' => 'Terjadi kesalahan saat menyimpan rating.',
-                'error' => $e->getMessage()
+                'message' => 'Failed to save rating. Please try again later',
+                'error_detail' => $e->getMessage(), // <--- PESAN ERROR YANG SEBENARNYA
+                'request_data' => $request->all()
             ], 500);
         }
     }

@@ -27,7 +27,7 @@ class RatingSeeder extends Seeder
         for ($i = 0; $i < $totalRatings; $i++) {
             $ratings[] = [
                 'book_id' => $faker->randomElement($book_ids),
-                'rating_score' => $faker->numberBetween(1, 5),
+                'rating_score' => $faker->numberBetween(1, 10),
                 'voter_identifier' => $faker->uuid,
                 'created_at' => $faker->dateTimeBetween('-1 year', 'now'),
                 'updated_at' => now(),

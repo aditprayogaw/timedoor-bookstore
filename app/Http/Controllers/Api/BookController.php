@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Author;
 
 class BookController extends Controller
 {
@@ -79,19 +80,25 @@ class BookController extends Controller
         
         // F.7. Filter by Category (Multiple selection with AND/OR logic)
         if ($categories = $request->get('categories')) {
-            $categoryIds = explode(',', $categories);
+
+            if (!is_array($categories)) {
+                $categoryIds = $categories;
+            } else {
+                $categoryIds = $categories; 
+            }
+
+            $categoryIds = is_array($categories) ? $categories : explode(',', $categories);
+
             $logic = $request->get('category_logic', 'OR'); // Default OR
             
-            // Join ke tabel pivot 'book_category'
             $query->join('book_category as bc', 'books.id', '=', 'bc.book_id')
                 ->whereIn('bc.category_id', $categoryIds)
-                ->groupBy('books.id'); // Group by lagi setelah join
+                ->groupBy('books.id'); 
 
             if ($logic === 'AND') {
                 // Untuk logic AND: Buku harus memiliki SEMUA kategori yang dipilih
                 $query->havingRaw('COUNT(DISTINCT bc.category_id) = ?', [count($categoryIds)]);
             }
-            // Logic OR sudah tercakup oleh whereIn default
         }
 
 
@@ -136,6 +143,18 @@ class BookController extends Controller
             
             return $book;
         });
+
+        return response()->json($books);
+    }
+
+    public function getBooksByAuthor(string $authorId)
+    {
+        // Menggunakan relasi untuk mendapatkan buku-buku penulis tersebut
+        $books = Book::query()
+            ->select('id', 'title') 
+            ->where('author_id', $authorId)
+            ->orderBy('title')
+            ->get();
 
         return response()->json($books);
     }
